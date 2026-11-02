@@ -3,7 +3,7 @@
 
 @implementation TVZTouchVizImageLoader
 + (UIImage *)imageAtPath:(NSString *)path {
-    TVZTouchVizDecodedFrames decoded = {0};
+    TVZTouchVizDecodedFrames decoded = {};
     if (!TVZTouchVizDecodeFile((__bridge CFURLRef)[NSURL fileURLWithPath:path], &decoded)) return nil;
     NSMutableArray<UIImage *> *frames = [NSMutableArray array];
     for (size_t i = 0; i < decoded.count; i++) {

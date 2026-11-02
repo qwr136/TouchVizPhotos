@@ -11,7 +11,7 @@ static bool decode(const char *root, const char *name, TVZTouchVizDecodedFrames 
 
 int main(int argc, const char **argv) {
     assert(argc==2);
-    TVZTouchVizDecodedFrames out={0};
+    TVZTouchVizDecodedFrames out={};
     assert(decode(argv[1],"unequal.gif",&out));
     assert(out.count==3 && out.animated);
     assert(out.repeats[0]==1 && out.repeats[1]==2 && out.repeats[2]==1);
