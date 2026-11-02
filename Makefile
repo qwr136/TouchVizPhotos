@@ -1,4 +1,4 @@
-export PACKAGE_VERSION := 4.2
+export PACKAGE_VERSION := 4.2.1
 
 ifeq ($(THEOS_DEVICE_SIMULATOR),1)
 ARCHS := arm64 x86_64
@@ -7,7 +7,7 @@ FWK_DIR := Frameworks/_Simulator
 IPHONE_SIMULATOR_ROOT := $(shell devkit/sim-root.sh)
 else
 ARCHS := arm64 arm64e
-TARGET := iphone:clang:latest:15.0
+TARGET := iphone:clang:16.5:15.0
 INSTALL_TARGET_PROCESSES := SpringBoard
 FWK_DIR := Frameworks
 endif
@@ -57,6 +57,7 @@ TouchViz_LDFLAGS += -rpath /opt/simject
 endif
 
 TouchViz_SWIFT_BRIDGING_HEADER += TouchViz-Bridging-Header.h
+TouchViz_FRAMEWORKS += UIKit ImageIO
 TouchViz_PRIVATE_FRAMEWORKS += FrontBoardServices
 
 ifeq ($(THEOS_DEVICE_SIMULATOR),1)

@@ -1,125 +1,88 @@
-name: Build Package
+name: Touch-Viz Photos and GIF (RootHide)
 
 on:
   workflow_dispatch:
   push:
-    branches:
-      - trunk
+    branches: [main]
+  pull_request:
 
 permissions:
   contents: write
 
+concurrency:
+  group: touchviz-${{ github.ref }}
+  cancel-in-progress: false
+
 env:
-  VERSION: 1.0
-  FINALPACKAGE: 1
   HOMEBREW_NO_AUTO_UPDATE: 1
   HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK: 1
   THEOS: ${{ github.workspace }}/theos-roothide
+  THEOS_PACKAGE_SCHEME: roothide
+  FINALPACKAGE: 1
+  PACKAGE_VERSION: 4.2.1+${{ github.run_number }}
 
 jobs:
-  build:
-    name: Build (${{ matrix.build_variant }})
-    runs-on: macos-14
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - build_variant: legacy
-            env_script: devkit/env.sh
-          - build_variant: rootless
-            env_script: devkit/rootless.sh
-          - build_variant: roothide
-            env_script: devkit/roothide.sh
-
-    steps:
-    - name: Setup Xcode
-      uses: maxim-lobanov/setup-xcode@v1
-      with:
-        xcode-version: '15.4'
-
-    - name: Checkout
-      uses: actions/checkout@v4
-
-    - name: Setup Environment
-      run: |
-        echo "$THEOS/bin" >> "$GITHUB_PATH"
-        echo "THEOS=$THEOS" >> "$GITHUB_ENV"
-        echo "THEOS_IGNORE_PARALLEL_BUILDING_NOTICE=yes" >> "$HOME/.theosrc"
-
-    - name: Install Theos dependencies
-      run: |
-        brew install ldid xz
-        echo "$(brew --prefix)/bin" >> "$GITHUB_PATH"
-        command -v ldid
-        command -v xz
-
-    - name: Checkout Theos (RootHide)
-      uses: actions/checkout@v4
-      with:
-        repository: roothide/theos
-        ref: d4826f4e54127cfe1de88103b69b92107591c05b
-        path: theos-roothide
-        submodules: recursive
-
-    - name: Install iOS SDK
-      run: |
-        cd "$THEOS"
-        ./bin/install-sdk iPhoneOS16.5
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-    - name: Build Package
-      run: |
-        source "${{ matrix.env_script }}"
-        export THEOS="$GITHUB_WORKSPACE/theos-roothide"
-        make clean package
-
-    - name: Collect dSYMs
-      run: |
-        find .theos/obj -name "*.dSYM" -exec cp -r {} ./packages/ \;
-
-    - name: Upload dSYMs
-      uses: actions/upload-artifact@v4
-      with:
-        name: symbols-${{ matrix.build_variant }}
-        path: |
-          ./packages/*.dSYM
-        if-no-files-found: warn
-
-    - name: Upload Packages
-      uses: actions/upload-artifact@v4
-      with:
-        name: packages-${{ matrix.build_variant }}
-        path: |
-          ./packages/*.deb
-        if-no-files-found: error
-
-  release:
-    name: Release
-    needs: build
+  test:
+    name: Source and executable policy tests
     runs-on: ubuntu-latest
-
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-
-    - name: Extract Version
-      run: |
-        VERSION=$(awk '/^export[[:space:]]+PACKAGE_VERSION[[:space:]]*:=/ { print $4; exit }' Makefile)
-        echo "VERSION=$VERSION" >> "$GITHUB_ENV"
-
-    - name: Download Packages
-      uses: actions/download-artifact@v4
-      with:
-        pattern: packages-*
-        path: release-packages
-        merge-multiple: true
-
-    - name: Release
-      uses: softprops/action-gh-release@v2
-      with:
-        tag_name: v${{ env.VERSION }}
-        draft: false
-        prerelease: false
-        files: |
-          release-packages/*.deb
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Run regression tests
+        run: python3 -m unittest discover -s tests -v
+  build:
+    name: RootHide arm64 and arm64e
+    needs: test
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: '16.4'
+      - name: Test actual ImageIO decoder
+        run: sh tests/run_imageio_tests.sh
+      - name: Set package version
+        run: python3 tests/set_version.py "$PACKAGE_VERSION"
+      - name: Install dependencies
+        run: |
+          brew install ldid xz
+          echo "$(brew --prefix)/bin" >> "$GITHUB_PATH"
+          echo "$THEOS/bin" >> "$GITHUB_PATH"
+          echo 'THEOS_IGNORE_PARALLEL_BUILDING_NOTICE=yes' >> "$HOME/.theosrc"
+      - uses: actions/checkout@v4
+        with:
+          repository: roothide/theos
+          ref: d4826f4e54127cfe1de88103b69b92107591c05b
+          path: theos-roothide
+          submodules: recursive
+      - name: Install iOS SDK 16.5
+        run: cd "$THEOS" && ./bin/install-sdk iPhoneOS16.5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Compile and package
+        run: sh build.sh roothide
+      - name: Verify actual deb
+        run: |
+          for deb in packages/*.deb; do
+            python3 tests/verify_deb.py "$deb" --expected-version "$PACKAGE_VERSION"
+            shasum -a 256 "$deb"
+          done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: packages-roothide
+          path: packages/*.deb
+          if-no-files-found: error
+      - name: Publish modification release
+        if: github.event_name != 'pull_request'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: photos-v${{ env.PACKAGE_VERSION }}
+          name: Touch-Viz ${{ env.PACKAGE_VERSION }} - 相册与 GIF 修改版
+          body: |
+            基于官方 Touch-Viz 4.2 (MIT) 的修改版，非原作者官方更新。
+            保留 com.82flex.touchvis 和原偏好域，只替换自定义图片相册导入并增加动态 GIF。
+            iOS 16 / Dopamine RootHide。源码回归、ImageIO macOS 回归与 Theos 构建验包不等于真机验收。
+            安装会覆盖同包名原版。完整说明见 MODIFICATIONS.md。
+          files: packages/*.deb

@@ -12,6 +12,26 @@
 @implementation LNTouchImageFactory
 
 + (UIImage *)imageWithTouchConfig:(LNTouchConfig *)touchConfig {
+    UIImage *fill = touchConfig.fillImage;
+    if (fill.images.count > 1) {
+        NSMutableArray<UIImage *> *frames = [NSMutableArray arrayWithCapacity:fill.images.count];
+        NSMapTable<UIImage *, UIImage *> *cache = [NSMapTable mapTableWithKeyOptions:NSPointerFunctionsObjectPointerPersonality
+                                                                     valueOptions:NSPointerFunctionsStrongMemory];
+        for (UIImage *frame in fill.images) {
+            UIImage *rendered = [cache objectForKey:frame];
+            if (!rendered) {
+                rendered = [self tvz_imageWithTouchConfig:touchConfig fillImage:frame];
+                if (!rendered) return nil;
+                [cache setObject:rendered forKey:frame];
+            }
+            [frames addObject:rendered];
+        }
+        return [UIImage animatedImageWithImages:frames duration:fill.duration];
+    }
+    return [self tvz_imageWithTouchConfig:touchConfig fillImage:fill];
+}
+
++ (UIImage *)tvz_imageWithTouchConfig:(LNTouchConfig *)touchConfig fillImage:(UIImage *)fillImage {
     CGFloat cornerRadius = touchConfig.cornerRadius;
     BOOL shouldDrawCircle = (cornerRadius >= touchConfig.radius - 1e-2);
 
@@ -20,7 +40,6 @@
 
     UIGraphicsBeginImageContextWithOptions(clipPath.bounds.size, NO, 0);
 
-    UIImage *fillImage = touchConfig.fillImage;
     if (fillImage) {
         [fillImage drawInRect:clipPath.bounds];
     }

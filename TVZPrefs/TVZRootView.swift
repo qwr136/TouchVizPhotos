@@ -100,6 +100,9 @@ struct TVZRootView: View {
     @State var isPresentingEmojiPicker = false
 
     @State var isPresentingFillImagePicker = false
+    @State private var tvz_isImportingPhoto = false
+    @State private var tvz_importErrorMessage = ""
+    @State private var tvz_showImportError = false
     @State var hasFillImage = false
     @State var fillImage: UIImage?
 
@@ -504,9 +507,7 @@ struct TVZRootView: View {
     var imageEffectPreview: some View {
         VStack(alignment: .center) {
             if let fillImage {
-                Image(uiImage: fillImage)
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
+                TVZTouchVizImagePreview(image: fillImage)
                     .frame(width: 60, height: 60)
             }
         }
@@ -540,8 +541,12 @@ struct TVZRootView: View {
             Button {
                 isPresentingFillImagePicker.toggle()
             } label: {
-                Label(NSLocalizedString("Select Image", bundle: Bundle.tvz_support, comment: ""), systemImage: "doc.badge.plus")
+                Label(NSLocalizedString("Select from Photos (Image / GIF)", bundle: Bundle.tvz_support, comment: ""), systemImage: "photo.on.rectangle")
                     .foregroundColor(TVZ_COLOR)
+            }
+            .disabled(tvz_isImportingPhoto)
+            if tvz_isImportingPhoto {
+                ProgressView(NSLocalizedString("Importing Image…", bundle: Bundle.tvz_support, comment: ""))
             }
         } header: {
             Text(NSLocalizedString("Custom Image", bundle: Bundle.tvz_support, comment: ""))
@@ -630,12 +635,35 @@ struct TVZRootView: View {
         .animation(.easeIn, value: useImageEffect)
         .animation(.easeIn, value: hasFillImage)
         .alert(isPresented: $isPresentingResetPrompt) { resetPrompt }
-        .fileImporter(
-            isPresented: $isPresentingFillImagePicker,
-            allowedContentTypes: [.image],
-            allowsMultipleSelection: false,
-            onCompletion: fileImporterResultHandler
-        )
+        .sheet(isPresented: $isPresentingFillImagePicker) {
+            TVZTouchVizPhotoPicker(onStart: {
+                tvz_isImportingPhoto = true
+                isPresentingFillImagePicker = false
+            }, onComplete: { result in
+                tvz_isImportingPhoto = false
+                isPresentingFillImagePicker = false
+                guard let result = result else { return }
+                switch result {
+                case .success(let name):
+                    imageFillName = name
+                    TVZUserDefaults.standard.darwinNotify()
+                    reload()
+                    feedbackGenerator.notificationOccurred(.success)
+                case .failure(let error):
+                    tvz_importErrorMessage = error.localizedDescription
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                        tvz_showImportError = true
+                    }
+                    feedbackGenerator.notificationOccurred(.error)
+                }
+            })
+        }
+        .alert(NSLocalizedString("Image Import Failed", bundle: Bundle.tvz_support, comment: ""),
+               isPresented: $tvz_showImportError) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(tvz_importErrorMessage)
+        }
         .onAppear {
             reload()
             reloadOverrides()
@@ -650,28 +678,6 @@ struct TVZRootView: View {
         }
         .introspect(.list, on: .iOS(.v16, .v17, .v18)) {
             scrollViewSubject.send($0)
-        }
-    }
-
-    private func fileImporterResultHandler(result: Result<[URL], Error>) {
-        do {
-            switch result {
-            case .success(let urls):
-                guard let url = urls.first else {
-                    return
-                }
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                    withAnimation {
-                        imageFillName = Bundle.tvz_saveFillImage(withPath: url.path) ?? Self.defaultFillImageName
-                        TVZUserDefaults.standard.darwinNotify()
-                        reload()
-                    }
-                }
-            case .failure(let error):
-                throw error
-            }
-        } catch {
-            feedbackGenerator.notificationOccurred(.error)
         }
     }
 }

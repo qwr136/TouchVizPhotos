@@ -1,9 +1,9 @@
 Package: com.82flex.touchvis
 Name: Touch-Viz
-Version: 4.2
-Architecture: iphoneos-arm
+Version: 4.2.1
+Architecture: iphoneos-arm64e
 Description: Display your touch interactions!
 Maintainer: Lessica <82flex@gmail.com>
 Author: Lessica <82flex@gmail.com>
 Section: Tweaks
-Depends: firmware (>= 15.0), mobilesubstrate, preferenceloader
+Depends: firmware (>= 15.0), mobilesubstrate, preferenceloader, roothide

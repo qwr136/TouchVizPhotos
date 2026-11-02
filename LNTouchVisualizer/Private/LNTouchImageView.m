@@ -10,4 +10,17 @@
 
 @implementation LNTouchImageView
 
+- (void)didMoveToWindow {
+    [super didMoveToWindow];
+    if (self.window && self.image.images.count > 1) {
+        self.animationImages = self.image.images;
+        self.animationDuration = self.image.duration;
+        self.animationRepeatCount = 0;
+        [self startAnimating];
+    } else {
+        [self stopAnimating];
+        self.animationImages = nil;
+    }
+}
+
 @end

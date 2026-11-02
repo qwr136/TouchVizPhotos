@@ -1,4 +1,6 @@
 #import "NSBundle+TVZPrefs.h"
+#import "TVZTouchVizImageLoader.h"
+#import <ImageIO/ImageIO.h>
 
 #import <Foundation/NSFileManager.h>
 #import <Foundation/NSString.h>
@@ -67,34 +69,37 @@
     if (!name || [name isEqualToString:@"default.png"]) {
         return [self tvz_defaultFillImage];
     }
-    static NSTimeInterval gLastModified = 0;
-    static UIImage *gFillImage = nil;
+    if (![name isEqualToString:name.lastPathComponent]) return [self tvz_defaultFillImage];
+    static NSString *tvz_cachedPath;
+    static NSDictionary *tvz_cachedAttributes;
+    static UIImage *tvz_cachedImage;
     NSString *imagePath = [[self tvz_fillImageRoot] stringByAppendingPathComponent:name];
-    if (gFillImage) {
-        NSDictionary *imageAttrs = [[NSFileManager defaultManager] attributesOfItemAtPath:imagePath error:nil];
-        if (imageAttrs) {
-            NSTimeInterval imageModified = [imageAttrs[NSFileModificationDate] timeIntervalSince1970];
-            if (imageModified > gLastModified) {
-                gLastModified = imageModified;
-            } else {
-                return gFillImage;
-            }
-        }
+    NSDictionary *attributes = [[NSFileManager defaultManager] attributesOfItemAtPath:imagePath error:nil];
+    @synchronized(self) {
+        if ([tvz_cachedPath isEqualToString:imagePath] && [tvz_cachedAttributes isEqual:attributes])
+            return tvz_cachedImage ?: [self tvz_defaultFillImage];
+        tvz_cachedImage = [TVZTouchVizImageLoader imageAtPath:imagePath];
+        tvz_cachedPath = imagePath;
+        tvz_cachedAttributes = attributes;
+        return tvz_cachedImage ?: [self tvz_defaultFillImage];
     }
-    gFillImage = [UIImage imageWithContentsOfFile:imagePath];
-    return gFillImage ?: [self tvz_defaultFillImage];
 }
 
 + (NSString *)tvz_saveFillImageWithPath:(NSString *)path {
     NSFileManager *fileManager = [NSFileManager defaultManager];
-    NSString *imageExt = [path pathExtension];
+    if (![TVZTouchVizImageLoader imageAtPath:path] || ![self tvz_ensureFillImageRoot]) return nil;
+    CGImageSourceRef source = CGImageSourceCreateWithURL((__bridge CFURLRef)[NSURL fileURLWithPath:path], NULL);
+    if (!source) return nil;
+    BOOL isGIF = CGImageSourceGetType(source) && CFEqual(CGImageSourceGetType(source), CFSTR("com.compuserve.gif"));
+    CFRelease(source);
+    NSString *imageExt = isGIF ? @"gif" : ([path pathExtension].length ? [path pathExtension] : @"image");
     NSString *imageName = [NSString stringWithFormat:@"%@.%@", [[NSUUID UUID] UUIDString], imageExt];
-    [self tvz_ensureFillImageRoot];
     NSString *imagePath = [[self tvz_fillImageRoot] stringByAppendingPathComponent:imageName];
-    [fileManager removeItemAtPath:imagePath error:nil];
     BOOL copied = [fileManager copyItemAtPath:path toPath:imagePath error:nil];
-    [fileManager setAttributes:@{NSFileModificationDate : [NSDate date]} ofItemAtPath:imagePath error:nil];
-    return copied ? imageName : nil;
+    if (!copied) { [fileManager removeItemAtPath:imagePath error:nil]; return nil; }
+    [fileManager setAttributes:@{NSFileModificationDate : [NSDate date], NSFilePosixPermissions : @0644}
+                       ofItemAtPath:imagePath error:nil];
+    return imageName;
 }
 
 + (NSString *)tvz_saveFillImageWithImage:(UIImage *)image {

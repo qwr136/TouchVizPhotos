@@ -111,3 +111,9 @@
 
 /* No comment provided by engineer. */
 "v%@ - @Lessica" = "v%@ - @Lessica";
+
+/* Photo/GIF import extension. */
+"Select from Photos (Image / GIF)" = "从相册选择图片 / GIF";
+"Importing Image…" = "正在导入图片…";
+"Image Import Failed" = "图片导入失败";
+"The image could not be imported. Use a complete image up to 12 MB. GIF supports up to 120 frames and a 60-second loop; simplify large GIFs and try again." = "无法导入。请选择完整图片，文件不超过 12 MB；GIF 最多 120 帧、每轮不超过 60 秒。过大的 GIF 请先精简后重试。";

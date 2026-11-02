@@ -4,7 +4,7 @@ TARGET := simulator:clang:latest:15.0
 IPHONE_SIMULATOR_ROOT := $(shell ../devkit/sim-root.sh)
 else
 ARCHS := arm64 arm64e
-TARGET := iphone:clang:latest:15.0
+TARGET := iphone:clang:16.5:15.0
 INSTALL_TARGET_PROCESSES := Preferences
 endif
 
@@ -20,6 +20,7 @@ TVZPrefs_FILES += ../libroot/dyn.c
 endif
 ifeq ($(THEOS_PACKAGE_SCHEME),roothide)
 TVZPrefs_FILES += ../libroot/dyn.c
+TVZPrefs_LIBRARIES += roothide
 endif
 
 TVZPrefs_CFLAGS += -fobjc-arc
@@ -46,7 +47,7 @@ TVZPrefs_SWIFTFLAGS += -FFrameworks/MCEmojiPicker.xcframework/ios-arm64_arm64e -
 TVZPrefs_SWIFTFLAGS += -FFrameworks/SwiftUIIntrospect.xcframework/ios-arm64_arm64e -framework SwiftUIIntrospect
 endif
 
-TVZPrefs_FRAMEWORKS += UIKit
+TVZPrefs_FRAMEWORKS += UIKit ImageIO PhotosUI UniformTypeIdentifiers
 TVZPrefs_PRIVATE_FRAMEWORKS += Preferences
 
 TVZPrefs_SWIFT_BRIDGING_HEADER += TVZPrefs-Bridging-Header.h
