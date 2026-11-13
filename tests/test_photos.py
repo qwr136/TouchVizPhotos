@@ -86,7 +86,7 @@ class TVZPhotoSourceContracts(unittest.TestCase):
         self.assertTrue(stub.exists())
         self.assertIn('platform:              ios', stub.read_text())
         make=(ROOT/'CCTouchViz/Makefile').read_text()
-        self.assertIn('-FCCTouchViz/Frameworks',make)
+        self.assertIn('-FFrameworks',make)
 
     def test_ci_gates_build_and_real_decoder_before_release(self):
         ci=(ROOT/'.github/workflows/build.yml').read_text()
