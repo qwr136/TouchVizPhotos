@@ -45,8 +45,12 @@ struct TVZRootView: View {
     @AppStorage("imageShouldAutoRotate", store: TVZUserDefaults.standard)
     var imageShouldAutoRotate = false
 
-    @AppStorage("imageFillName", store: TVZUserDefaults.standard)
-    var imageFillName: String = Self.defaultFillImageName
+    @StateObject private var tvz_selection: TVZTouchVizSelection<UIImage>
+    private var imageFillName: String { tvz_selection.current.name }
+    private var fillImage: UIImage? { tvz_selection.current.image }
+    private var hasFillImage: Bool {
+        fillImage != nil && imageFillName != Self.defaultFillImageName
+    }
     static let defaultFillImageName = "default.png"
 
     @AppStorage("alpha", store: TVZUserDefaults.standard)
@@ -95,16 +99,13 @@ struct TVZRootView: View {
     @State var isShowingEnableOverrideHint = false
     @State var isShowingDisableOverrideHint = false
 
-    @AppStorage("selectedEmoji", store: TVZUserDefaults.standard)
-    var selectedEmoji: String = ""
+    private var selectedEmoji: String { tvz_selection.current.emoji }
     @State var isPresentingEmojiPicker = false
 
     @State var isPresentingFillImagePicker = false
     @State private var tvz_isImportingPhoto = false
     @State private var tvz_importErrorMessage = ""
     @State private var tvz_showImportError = false
-    @State var hasFillImage = false
-    @State var fillImage: UIImage?
 
     private let scrollViewSubject: CurrentValueSubject<UIScrollView?, Never>
     private let timer = Timer.publish(every: 1, on: .main, in: .default).autoconnect()
@@ -112,6 +113,19 @@ struct TVZRootView: View {
 
     init(scrollViewSubject: CurrentValueSubject<UIScrollView?, Never>) {
         self.scrollViewSubject = scrollViewSubject
+        let defaults = TVZUserDefaults.standard
+        _tvz_selection = StateObject(wrappedValue: TVZTouchVizSelection(
+            name: defaults.string(forKey: "imageFillName") ?? Self.defaultFillImageName,
+            emoji: defaults.string(forKey: "selectedEmoji") ?? "",
+            load: { Bundle.tvz_fillImageNamed($0) },
+            persist: { name, emoji in
+                defaults.beginUpdates()
+                defaults.set(emoji, forKey: "selectedEmoji")
+                defaults.set(name, forKey: "imageFillName")
+                _ = defaults.synchronize()
+                defaults.endUpdates()
+            }
+        ))
     }
 
     func reload() {
@@ -130,8 +144,9 @@ struct TVZRootView: View {
         let trackingBorderColorString = TVZUserDefaults.standard.string(forKey: "trackingBorderColorString") ?? "235,59,90,0.4"
         trackingBorderColor = Color(rgbString: trackingBorderColorString)
 
-        fillImage = Bundle.tvz_fillImageNamed(imageFillName)
-        hasFillImage = fillImage != nil && imageFillName != Self.defaultFillImageName
+        let defaults = TVZUserDefaults.standard
+        tvz_selection.restore(defaults.string(forKey: "imageFillName") ?? Self.defaultFillImageName,
+                              emoji: defaults.string(forKey: "selectedEmoji") ?? "")
     }
 
     func reloadOverrides() {
@@ -505,9 +520,9 @@ struct TVZRootView: View {
     }
 
     var imageEffectPreview: some View {
-        TVZTouchVizImagePreview(imageName: imageFillName)
+        TVZTouchVizImagePreview(image: fillImage)
+            .id(imageFillName)
             .frame(maxWidth: .infinity, alignment: .center)
-            .animation(.easeIn, value: imageFillName)
     }
 
     var imageEffectSection: some View {
@@ -522,7 +537,7 @@ struct TVZRootView: View {
             }
             .emojiPicker(
                 isPresented: $isPresentingEmojiPicker,
-                selectedEmoji: $selectedEmoji,
+                selectedEmoji: tvz_emojiSelection,
                 arrowDirection: .down
             )
 
@@ -532,6 +547,7 @@ struct TVZRootView: View {
                 Label(NSLocalizedString("Select Emoji", bundle: Bundle.tvz_support, comment: ""), systemImage: "face.smiling")
                     .foregroundColor(TVZ_COLOR)
             }
+            .disabled(tvz_isImportingPhoto)
 
             Button {
                 isPresentingFillImagePicker.toggle()
@@ -546,18 +562,26 @@ struct TVZRootView: View {
         } header: {
             Text(NSLocalizedString("Custom Image", bundle: Bundle.tvz_support, comment: ""))
         }
-        .onChange(of: selectedEmoji) { emoji in
-            guard !emoji.isEmpty else {
+    }
+
+    private var tvz_emojiSelection: Binding<String> {
+        Binding(get: { selectedEmoji }, set: { emoji in
+            guard !emoji.isEmpty else { return }
+            guard let name = Bundle.tvz_saveFillImage(with: emoji.render(size: String.nativeEmojiSize)) else {
+                feedbackGenerator.notificationOccurred(.error)
                 return
             }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                withAnimation {
-                    imageFillName = Bundle.tvz_saveFillImage(with: emoji.render(size: String.nativeEmojiSize)) ?? Self.defaultFillImageName
-                    TVZUserDefaults.standard.darwinNotify()
-                    reload()
-                }
-            }
+            tvz_applySelectedImage(name, emoji: emoji)
+        })
+    }
+
+    private func tvz_applySelectedImage(_ name: String, emoji: String? = nil) {
+        var transaction = Transaction()
+        transaction.disablesAnimations = true
+        let applied = withTransaction(transaction) {
+            tvz_selection.select(name, emoji: emoji ?? "")
         }
+        feedbackGenerator.notificationOccurred(applied ? .success : .error)
     }
 
     var resetSection: some View {
@@ -583,11 +607,17 @@ struct TVZRootView: View {
             primaryButton: .cancel(),
             secondaryButton: .destructive(Text(NSLocalizedString("Reset", bundle: Bundle.tvz_support, comment: ""))) {
                 withAnimation {
-                    if Bundle.tvz_removeAllFillImages() {
-                        imageFillName = Self.defaultFillImageName
-                        selectedEmoji = ""
+                    let defaults = TVZUserDefaults.standard
+                    defaults.beginUpdates()
+                    let removed = Bundle.tvz_removeAllFillImages()
+                    let previousName = imageFillName
+                    let previousEmoji = selectedEmoji
+                    defaults.resetToDefaultValues()
+                    if !removed {
+                        defaults.set(previousName, forKey: "imageFillName")
+                        defaults.set(previousEmoji, forKey: "selectedEmoji")
                     }
-                    TVZUserDefaults.standard.resetToDefaultValues()
+                    defaults.endUpdates()
                     reload()
                 }
             }
@@ -640,10 +670,7 @@ struct TVZRootView: View {
                 guard let result = result else { return }
                 switch result {
                 case .success(let name):
-                    imageFillName = name
-                    TVZUserDefaults.standard.darwinNotify()
-                    reload()
-                    feedbackGenerator.notificationOccurred(.success)
+                    tvz_applySelectedImage(name)
                 case .failure(let error):
                     tvz_importErrorMessage = error.localizedDescription
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {

@@ -43,6 +43,11 @@ jobs:
           xcode-version: '16.4'
       - name: Test actual ImageIO decoder
         run: sh tests/run_imageio_tests.sh
+      - name: Test immediate material selection
+        run: sh tests/run_selection_tests.sh
+      - name: Test SwiftUI preview in iOS simulator
+        timeout-minutes: 8
+        run: sh tests/run_preview_tests.sh
       - name: Set package version
         run: python3 tests/set_version.py "$PACKAGE_VERSION"
       - name: Install dependencies

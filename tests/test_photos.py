@@ -44,28 +44,27 @@ class TVZPhotoSourceContracts(unittest.TestCase):
         failure=tail[:tail.index('.onAppear')]
         self.assertNotIn('imageFillName =',failure)
         self.assertIn('guard let result = result else { return }',view)
-        self.assertIn('imageFillName = name',view)
+        self.assertIn('tvz_applySelectedImage(name)',view)
+        self.assertNotIn('tvz_applySelectedImage',failure)
         picker=source('TVZPrefs/TVZTouchVizPhotoPicker.swift')
         self.assertIn('parent.onComplete(nil)',picker)
         self.assertIn('tvz_importErrorMessage',view)
 
     def test_preview_and_touch_consumer_are_animated(self):
-        preview=source('TVZPrefs/TVZTouchVizPhotoPicker.swift')
+        preview=source('TVZPrefs/TVZTouchVizImagePreview.swift')
         view=source('TVZPrefs/TVZRootView.swift')
         self.assertIn('struct TVZTouchVizImagePreview: View',preview)
-        for code in ('let imageName: String',
-                     '@State private var sourceImage: UIImage',
-                     '_sourceImage = State(initialValue: Bundle.tvz_fillImageNamed(imageName))',
+        for code in ('private let frames: [UIImage]',
+                     'private let duration: TimeInterval',
                      'TimelineView(.animation(minimumInterval: 0.05',
-                     'Image(uiImage: frame(at: timeline.date))',
-                     '.frame(width: 60, height: 60)',
-                     '.onAppear(perform: tvz_reloadSelectedImage)',
-                     '.onChange(of: imageName)',
-                     'sourceImage = Bundle.tvz_fillImageNamed(imageName)'):
+                     'Image(uiImage: tvz_frame(at: timeline.date))',
+                     'else if duration == 0',
+                     '.frame(width: 60, height: 60)', '.aspectRatio(contentMode: .fit)'):
             self.assertIn(code,preview)
-        self.assertNotIn('UIViewRepresentable',preview)
-        self.assertNotIn('UIImageView',preview)
-        self.assertIn('TVZTouchVizImagePreview(imageName: imageFillName)',view)
+        for obsolete in ('UIViewRepresentable','UIImageView','@State','onChange','onAppear'):
+            self.assertNotIn(obsolete,preview)
+        self.assertIn('TVZTouchVizImagePreview(image: fillImage)',view)
+        self.assertIn('.id(imageFillName)',view)
         preview_body=view[view.index('var imageEffectPreview: some View {'):view.index('var imageEffectSection: some View {')]
         self.assertNotIn('if let fillImage',preview_body)
         self.assertIn('self.window && self.image.images.count > 1',source('LNTouchVisualizer/Private/LNTouchImageView.m'))
@@ -76,6 +75,31 @@ class TVZPhotoSourceContracts(unittest.TestCase):
         life=source('LNTouchVisualizer/Private/LNTouchImageView.m')
         self.assertIn('self.window && self.image.images.count > 1',life)
         self.assertIn('[self stopAnimating]',life)
+
+    def test_material_callbacks_apply_the_new_selection_once(self):
+        view=source('TVZPrefs/TVZRootView.swift')
+        self.assertIn('@StateObject private var tvz_selection: TVZTouchVizSelection<UIImage>',view)
+        self.assertIn('private var imageFillName: String { tvz_selection.current.name }',view)
+        self.assertIn('private var fillImage: UIImage? { tvz_selection.current.image }',view)
+        self.assertIn('selectedEmoji: tvz_emojiSelection',view)
+        self.assertIn('tvz_applySelectedImage(name, emoji: emoji)',view)
+        apply=view[view.index('private func tvz_applySelectedImage'):view.index('var resetSection: some View')]
+        self.assertIn('tvz_selection.select(name, emoji: emoji ?? "")',apply)
+        self.assertIn('transaction.disablesAnimations = true',apply)
+        self.assertNotIn('reload()',apply)
+        self.assertNotIn('asyncAfter',apply)
+        self.assertNotIn('.onChange(of: selectedEmoji)',view)
+        self.assertNotIn('@State private var sourceImage',source('TVZPrefs/TVZTouchVizImagePreview.swift'))
+        persist=view[view.index('persist: { name, emoji in'):view.index('func reload()')]
+        self.assertLess(persist.index('defaults.set(name'),persist.index('defaults.synchronize()'))
+        self.assertLess(persist.index('defaults.synchronize()'),persist.index('defaults.endUpdates()'))
+        ci=(ROOT/'.github/workflows/build.yml').read_text()
+        self.assertIn('sh tests/run_selection_tests.sh',ci)
+        self.assertIn('sh tests/run_preview_tests.sh',ci)
+        simulator=(ROOT/'tests/run_preview_tests.sh').read_text()
+        self.assertIn('TVZPrefs/TVZTouchVizImagePreview.swift tests/preview_test.swift',simulator)
+        native=(ROOT/'tests/run_selection_tests.sh').read_text()
+        self.assertIn('TVZPrefs/TVZTouchVizSelection.swift tests/selection_test.swift',native)
 
     def test_decoder_and_cache_use_actual_file_identity(self):
         bundle=source('TVZPrefs/NSBundle+TVZPrefs.mm')
