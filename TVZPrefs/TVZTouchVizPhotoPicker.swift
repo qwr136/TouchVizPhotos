@@ -65,34 +65,62 @@ struct TVZTouchVizPhotoPicker: UIViewControllerRepresentable {
 }
 
 /// SwiftUI Image(uiImage:) shows only a poster frame, so preview with UIImageView.
+private final class TVZTouchVizAnimatedPreviewView: UIView {
+    let imageView = UIImageView()
+
+    override var intrinsicContentSize: CGSize {
+        CGSize(width: 60, height: 60)
+    }
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        clipsToBounds = true
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+        imageView.contentMode = .scaleAspectFit
+        imageView.clipsToBounds = true
+        addSubview(imageView)
+        NSLayoutConstraint.activate([
+            imageView.leadingAnchor.constraint(equalTo: leadingAnchor),
+            imageView.trailingAnchor.constraint(equalTo: trailingAnchor),
+            imageView.topAnchor.constraint(equalTo: topAnchor),
+            imageView.bottomAnchor.constraint(equalTo: bottomAnchor)
+        ])
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    func setImage(_ image: UIImage) {
+        imageView.stopAnimating()
+        imageView.animationImages = nil
+        imageView.image = image
+        guard let frames = image.images, frames.count > 1 else { return }
+        imageView.animationImages = frames
+        imageView.animationDuration = max(image.duration, 0.02)
+        imageView.animationRepeatCount = 0
+        imageView.startAnimating()
+    }
+
+    func stopPlayback() {
+        imageView.stopAnimating()
+        imageView.animationImages = nil
+        imageView.image = nil
+    }
+}
+
 struct TVZTouchVizImagePreview: UIViewRepresentable {
     let image: UIImage
 
-    func makeUIView(context: Context) -> UIImageView {
-        let view = UIImageView()
-        view.contentMode = .scaleAspectFit
-        view.clipsToBounds = true
-        view.setContentHuggingPriority(.defaultLow, for: .horizontal)
-        view.setContentHuggingPriority(.defaultLow, for: .vertical)
-        return view
+    func makeUIView(context: Context) -> TVZTouchVizAnimatedPreviewView {
+        TVZTouchVizAnimatedPreviewView()
     }
 
-    func updateUIView(_ view: UIImageView, context: Context) {
-        guard view.image !== image else { return }
-        view.stopAnimating()
-        view.animationImages = nil
-        view.image = image
-        if let frames = image.images, frames.count > 1 {
-            view.animationImages = frames
-            view.animationDuration = image.duration
-            view.animationRepeatCount = 0
-            view.startAnimating()
-        }
+    func updateUIView(_ view: TVZTouchVizAnimatedPreviewView, context: Context) {
+        view.setImage(image)
     }
 
-    static func dismantleUIView(_ view: UIImageView, coordinator: ()) {
-        view.stopAnimating()
-        view.animationImages = nil
-        view.image = nil
+    static func dismantleUIView(_ view: TVZTouchVizAnimatedPreviewView, coordinator: ()) {
+        view.stopPlayback()
     }
 }

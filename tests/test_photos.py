@@ -51,8 +51,14 @@ class TVZPhotoSourceContracts(unittest.TestCase):
 
     def test_preview_and_touch_consumer_are_animated(self):
         preview=source('TVZPrefs/TVZTouchVizPhotoPicker.swift')
-        for code in ('view.animationImages = frames','view.animationDuration = image.duration','view.startAnimating()',
-                     'static func dismantleUIView','view.stopAnimating()'):
+        for code in ('intrinsicContentSize: CGSize', 'CGSize(width: 60, height: 60)',
+                     'imageView.contentMode = .scaleAspectFit',
+                     'imageView.leadingAnchor.constraint(equalTo: leadingAnchor)',
+                     'imageView.trailingAnchor.constraint(equalTo: trailingAnchor)',
+                     'imageView.topAnchor.constraint(equalTo: topAnchor)',
+                     'imageView.bottomAnchor.constraint(equalTo: bottomAnchor)',
+                     'imageView.animationImages = frames','imageView.animationDuration = max(image.duration, 0.02)',
+                     'imageView.startAnimating()', 'static func dismantleUIView','view.stopPlayback()'):
             self.assertIn(code,preview)
         factory=source('LNTouchVisualizer/Private/LNTouchImageFactory.m')
         self.assertIn('for (UIImage *frame in fill.images)',factory)
