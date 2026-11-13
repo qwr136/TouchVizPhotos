@@ -12,7 +12,7 @@ struct TVZTouchVizImageControl {
 
     static let tvzGIFPlaybackRate = TVZTouchVizImageControl(
         tvzKey: "tvzGIFPlaybackRate", tvzDefaultValue: 1,
-        tvzRange: 0.5...2.0, tvzStep: 0.1,
+        tvzRange: 0.5...5.0, tvzStep: 0.1,
         tvzTitle: "GIF Playback Speed", tvzFormat: "%.1f x",
         tvzFooter: "Adjusts GIF playback and the custom image preview; still images are unchanged."
     )

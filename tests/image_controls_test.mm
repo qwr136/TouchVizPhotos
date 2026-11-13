@@ -77,7 +77,7 @@ extern "C" NSString *TVZTouchVizRunImageControlTests(void) {
     [defaults setObject:@999 forKey:@"tvzImageOffsetX"];
     [defaults setObject:@(-999) forKey:@"tvzImageOffsetY"];
     TVZTouchVizLoadImageControls(defaults,contact,ripple);
-    TVZ_CONTROLS_CHECK(contact.tvzGIFPlaybackRate==2 && ripple.tvzGIFPlaybackRate==2 &&
+    TVZ_CONTROLS_CHECK(contact.tvzGIFPlaybackRate==5 && ripple.tvzGIFPlaybackRate==5 &&
         contact.tvzImageOffsetX==100 && ripple.tvzImageOffsetY==-100, @"consumer range validation failed");
 
     UIGraphicsImageRenderer *renderer = [[UIGraphicsImageRenderer alloc] initWithSize:CGSizeMake(24,24)];
@@ -111,6 +111,13 @@ extern "C" NSString *TVZTouchVizRunImageControlTests(void) {
     TVZ_CONTROLS_CHECK(view && TVZControlPoint(view.center,170,200), @"first touch image offset failed");
     TVZ_CONTROLS_CHECK(TVZControlPoint(view.tvzRawCenter,140,240) && TVZControlPoint(touch.tvzPoint,140,240), @"display offset changed raw touch");
     TVZ_CONTROLS_CHECK(view.isAnimating && TVZControlClose(view.animationDuration,0.2), @"2x touch GIF duration failed");
+    for (double rate = 3; rate <= 5; rate += 1) {
+        contact.tvzGIFPlaybackRate = rate;
+        window.touchContactConfig = contact;
+        TVZ_CONTROLS_CHECK(view.isAnimating && TVZControlClose(view.animationDuration,0.4/rate),
+                          @"3x to 5x touch GIF playback failed");
+        TVZ_CONTROLS_CHECK(TVZControlPoint(view.center,170,200), @"speed changed image offset");
+    }
     TVZ_CONTROLS_CHECK(TVZControlClose(contact.fadeDuration,0.3) && contact.liftScale==2, @"speed changed lift/fade parameters");
     contact.tvzGIFPlaybackRate=0.5; contact.tvzImageOffsetX=-20; contact.tvzImageOffsetY=15;
     window.touchContactConfig=contact;
@@ -138,6 +145,10 @@ extern "C" NSString *TVZTouchVizRunImageControlTests(void) {
         if ([candidate isKindOfClass:LNTouchImageView.class] && candidate.tvzIsRipple) trail=candidate;
     TVZ_CONTROLS_CHECK(trail && TVZControlPoint(trail.center,180,200) &&
         TVZControlClose(trail.animationDuration,0.2), @"image trail missed speed or offset");
+    ripple.tvzGIFPlaybackRate=5;
+    window.touchRippleConfig=ripple;
+    TVZ_CONTROLS_CHECK(trail.isAnimating && TVZControlClose(trail.animationDuration,0.08),
+                      @"5x image trail playback failed");
     contact.fillImage=nil;
     window.touchContactConfig=contact;
     touch.tvzPoint=CGPointMake(160,250);

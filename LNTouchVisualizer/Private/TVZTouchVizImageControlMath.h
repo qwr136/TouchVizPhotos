@@ -5,7 +5,7 @@
 
 static inline double TVZTouchVizPlaybackRate(double value) {
     if (!isfinite(value)) return 1.0;
-    return fmin(2.0, fmax(0.5, value));
+    return fmin(5.0, fmax(0.5, value));
 }
 
 static inline double TVZTouchVizImageOffset(double value) {

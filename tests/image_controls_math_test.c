@@ -9,7 +9,12 @@ int main(void) {
     assert(TVZTouchVizPlaybackRate(NAN)==1.0);
     assert(TVZTouchVizPlaybackRate(INFINITY)==1.0);
     assert(TVZTouchVizPlaybackRate(-5)==0.5);
-    assert(TVZTouchVizPlaybackRate(9)==2.0);
+    assert(TVZTouchVizPlaybackRate(9)==5.0);
+    assert(TVZTouchVizPlaybackRate(2)==2.0);
+    assert(fabs(TVZTouchVizPlaybackDuration(0.4,3)-0.4/3)<1e-8);
+    assert(fabs(TVZTouchVizPlaybackDuration(0.4,4)-0.1)<1e-8);
+    assert(fabs(TVZTouchVizPlaybackDuration(0.4,5)-0.08)<1e-8);
+    assert(fabs(TVZTouchVizPlaybackDuration(0.4,9)-0.08)<1e-8);
     assert(TVZTouchVizPlaybackDuration(0.4,0.5)==0.8);
     assert(TVZTouchVizPlaybackDuration(0.4,1)==0.4);
     assert(TVZTouchVizPlaybackDuration(0.4,2)==0.2);

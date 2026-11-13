@@ -26,7 +26,7 @@ class TVZImageControlTests(unittest.TestCase):
         ui = code('TVZPrefs/TVZTouchVizImageControls.swift')
         for needle in ('"minus.circle"', '"plus.circle"', 'Slider(value: $tvzValue',
                        'HStack(spacing: 12)', '.footnote.monospacedDigit()',
-                       'tvzRange: 0.5...2.0, tvzStep: 0.1', 'tvzRange: -100.0...100.0, tvzStep: 1'):
+                       'tvzRange: 0.5...5.0, tvzStep: 0.1', 'tvzRange: -100.0...100.0, tvzStep: 1'):
             self.assertIn(needle, ui)
         for key in ('tvzGIFPlaybackRate', 'tvzImageOffsetX', 'tvzImageOffsetY'):
             self.assertIn('@AppStorage("'+key+'"', root)

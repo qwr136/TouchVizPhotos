@@ -5,7 +5,7 @@ import UIKit
 func TVZTouchVizPreviewDuration(_ tvzOriginalDuration: TimeInterval,
                                 playbackRate tvzPlaybackRate: Double = 1) -> TimeInterval {
     guard tvzOriginalDuration.isFinite, tvzOriginalDuration > 0 else { return 0 }
-    let tvzRate = tvzPlaybackRate.isFinite ? min(max(tvzPlaybackRate, 0.5), 2.0) : 1.0
+    let tvzRate = tvzPlaybackRate.isFinite ? min(max(tvzPlaybackRate, 0.5), 5.0) : 1.0
     let tvzAdjustedDuration = tvzOriginalDuration / tvzRate
     return tvzAdjustedDuration.isFinite && tvzAdjustedDuration > 0 ? tvzAdjustedDuration : 0
 }

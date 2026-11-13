@@ -39,6 +39,10 @@ func TVZTouchVizRunSliderTests() -> String? {
     if !tvzNear(TVZTouchVizPreviewDuration(0.4, playbackRate: 0.5),0.8) ||
        !tvzNear(TVZTouchVizPreviewDuration(0.4, playbackRate: 1),0.4) ||
        !tvzNear(TVZTouchVizPreviewDuration(0.4, playbackRate: 2),0.2) ||
+       !tvzNear(TVZTouchVizPreviewDuration(0.4, playbackRate: 3),0.4/3) ||
+       !tvzNear(TVZTouchVizPreviewDuration(0.4, playbackRate: 4),0.1) ||
+       !tvzNear(TVZTouchVizPreviewDuration(0.4, playbackRate: 5),0.08) ||
+       !tvzNear(TVZTouchVizPreviewDuration(0.4, playbackRate: 9),0.08) ||
        !tvzNear(TVZTouchVizPreviewDuration(0.4, playbackRate: .nan),0.4) ||
        TVZTouchVizPreviewDuration(0, playbackRate: 2) != 0 {
         return "preview playback duration differs from actual touch GIF"
@@ -53,6 +57,6 @@ func TVZTouchVizRunSliderTests() -> String? {
     tvzHost.loadViewIfNeeded()
     tvzHost.view.frame = CGRect(x: 0, y: 0, width: 390, height: 844)
     tvzHost.view.layoutIfNeeded()
-    print("PASS production slider controls: +/- bindings, invalid values, limits, reset, three-section layout and preview 0.5x/1x/2x")
+    print("PASS production slider controls: +/- bindings, invalid values, limits, reset, three-section layout and preview 0.5x/1x/2x/3x/4x/5x")
     return nil
 }
