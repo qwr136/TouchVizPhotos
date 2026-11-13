@@ -67,6 +67,7 @@ struct TVZTouchVizPhotoPicker: UIViewControllerRepresentable {
 /// SwiftUI Image(uiImage:) shows only a poster frame, so preview with UIImageView.
 final class TVZTouchVizAnimatedPreviewView: UIView {
     let imageView = UIImageView()
+    private var tvz_image: UIImage?
 
     override var intrinsicContentSize: CGSize {
         CGSize(width: 60, height: 60)
@@ -92,20 +93,36 @@ final class TVZTouchVizAnimatedPreviewView: UIView {
     }
 
     func setImage(_ image: UIImage) {
+        guard tvz_image !== image || imageView.image == nil else {
+            resumePlayback()
+            return
+        }
+        tvz_image = image
         imageView.stopAnimating()
         imageView.animationImages = nil
         imageView.image = image
-        guard let frames = image.images, frames.count > 1 else { return }
+        guard let frames = image.images, frames.count > 1 else {
+            imageView.animationImages = nil
+            return
+        }
         imageView.animationImages = frames
         imageView.animationDuration = max(image.duration, 0.02)
         imageView.animationRepeatCount = 0
-        imageView.startAnimating()
+        resumePlayback()
+    }
+
+    override func didMoveToWindow() {
+        super.didMoveToWindow()
+        resumePlayback()
+    }
+
+    private func resumePlayback() {
+        guard window != nil, imageView.animationImages?.count ?? 0 > 1 else { return }
+        if !imageView.isAnimating { imageView.startAnimating() }
     }
 
     func stopPlayback() {
         imageView.stopAnimating()
-        imageView.animationImages = nil
-        imageView.image = nil
     }
 }
 

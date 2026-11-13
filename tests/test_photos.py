@@ -58,8 +58,19 @@ class TVZPhotoSourceContracts(unittest.TestCase):
                      'imageView.topAnchor.constraint(equalTo: topAnchor)',
                      'imageView.bottomAnchor.constraint(equalTo: bottomAnchor)',
                      'imageView.animationImages = frames','imageView.animationDuration = max(image.duration, 0.02)',
-                     'imageView.startAnimating()', 'static func dismantleUIView','view.stopPlayback()'):
+                     'imageView.startAnimating()', 'static func dismantleUIView','view.stopPlayback()',
+                     'override func didMoveToWindow()', 'resumePlayback()',
+                     'guard window != nil, imageView.animationImages?.count ?? 0 > 1 else { return }'):
             self.assertIn(code,preview)
+        for code in ('private var tvz_image: UIImage?',
+                     'guard tvz_image !== image || imageView.image == nil else {',
+                     'tvz_image = image', 'override func didMoveToWindow()', 'resumePlayback()',
+                     'guard window != nil, imageView.animationImages?.count ?? 0 > 1 else { return }'):
+            self.assertIn(code,preview)
+        stop = preview[preview.index('func stopPlayback()'):preview.index('struct TVZTouchVizImagePreview')]
+        self.assertIn('imageView.stopAnimating()', stop)
+        self.assertNotIn('imageView.image = nil', stop)
+        self.assertNotIn('imageView.animationImages = nil', stop)
         factory=source('LNTouchVisualizer/Private/LNTouchImageFactory.m')
         self.assertIn('for (UIImage *frame in fill.images)',factory)
         self.assertIn('fillImage:frame',factory)
