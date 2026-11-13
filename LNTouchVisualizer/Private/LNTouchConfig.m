@@ -32,6 +32,9 @@ static const NSTimeInterval LNTouchConfigRippleFadeDuration = 0.2;
         self.fadeDuration = LNTouchConfigContactFadeDuration;
         self.shouldAutoRotate = NO;
         self.fillImage = nil;
+        self.tvzGIFPlaybackRate = 1.0;
+        self.tvzImageOffsetX = 0.0;
+        self.tvzImageOffsetY = 0.0;
     }
 
     return self;

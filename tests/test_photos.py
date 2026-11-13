@@ -54,16 +54,17 @@ class TVZPhotoSourceContracts(unittest.TestCase):
         preview=source('TVZPrefs/TVZTouchVizImagePreview.swift')
         view=source('TVZPrefs/TVZRootView.swift')
         self.assertIn('struct TVZTouchVizImagePreview: View',preview)
-        for code in ('private let frames: [UIImage]',
-                     'private let duration: TimeInterval',
+        for code in ('private let tvzFrames: [UIImage]',
+                     'private let tvzDuration: TimeInterval',
                      'TimelineView(.animation(minimumInterval: 0.05',
-                     'Image(uiImage: tvz_frame(at: timeline.date))',
-                     'else if duration == 0',
+                     'Image(uiImage: tvz_frame(at: tvzTimeline.date))',
+                     'else if tvzDuration == 0',
                      '.frame(width: 60, height: 60)', '.aspectRatio(contentMode: .fit)'):
             self.assertIn(code,preview)
         for obsolete in ('UIViewRepresentable','UIImageView','@State','onChange','onAppear'):
             self.assertNotIn(obsolete,preview)
-        self.assertIn('TVZTouchVizImagePreview(image: fillImage)',view)
+        self.assertIn('TVZTouchVizImagePreview(',view)
+        self.assertIn('image: fillImage,',view)
         self.assertIn('.id(imageFillName)',view)
         preview_body=view[view.index('var imageEffectPreview: some View {'):view.index('var imageEffectSection: some View {')]
         self.assertNotIn('if let fillImage',preview_body)

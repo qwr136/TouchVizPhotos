@@ -33,6 +33,9 @@ static NSString *const kDefaultsSuiteName = @"com.82flex.touchviz";
         @"cornerRadius" : @30.0,
         @"animationDuration" : @0.3,
         @"liftScale" : @2.0,
+        @"tvzGIFPlaybackRate" : @1.0,
+        @"tvzImageOffsetX" : @0.0,
+        @"tvzImageOffsetY" : @0.0,
 
         @"useQuickPathEffect" : @NO,
         @"quickPathFillColorString" : @"235,59,90,0.5",
@@ -88,6 +91,7 @@ static NSString *const kDefaultsSuiteName = @"com.82flex.touchviz";
 }
 
 - (void)darwinNotify {
+    [self synchronize];
     notify_post(TVZ_NOTIFY_NAME);
 }
 

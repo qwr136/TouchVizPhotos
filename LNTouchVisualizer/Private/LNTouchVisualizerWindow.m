@@ -9,6 +9,7 @@
 #import "LNOverlayVisualizerWindow.h"
 #import "LNTouchImageFactory.h"
 #import "LNTouchImageView.h"
+#import "TVZTouchVizImageControlMath.h"
 
 #import <CoreGraphics/CoreGraphics.h>
 #import <LNTouchVisualizer/LNTouchConfig.h>
@@ -43,6 +44,10 @@ __attribute__((visibility("hidden")))
 
 @property(nonatomic, strong) UIImage *touchImage;
 @property(nonatomic, strong) UIImage *rippleImage;
+
+- (void)tvz_refreshImageControlsForRipples:(BOOL)ripples;
+- (CGPoint)tvz_displayCenter:(CGPoint)rawCenter config:(LNTouchConfig *)config
+                 coordinate:(CGAffineTransform)coordinate;
 
 @end
 
@@ -116,11 +121,36 @@ __attribute__((visibility("hidden")))
 - (void)setTouchContactConfig:(LNTouchConfig *)touchContactConfig {
     _touchContactConfig = touchContactConfig;
     _touchImage = nil;
+    [self tvz_refreshImageControlsForRipples:NO];
 }
 
 - (void)setTouchRippleConfig:(LNTouchConfig *)touchRippleConfig {
     _touchRippleConfig = touchRippleConfig;
     _rippleImage = nil;
+    [self tvz_refreshImageControlsForRipples:YES];
+}
+
+- (CGPoint)tvz_displayCenter:(CGPoint)rawCenter config:(LNTouchConfig *)config
+                 coordinate:(CGAffineTransform)coordinate {
+    TVZTouchVizPoint point = TVZTouchVizDisplayPoint(rawCenter.x, rawCenter.y, config.fillImage != nil,
+        config.tvzImageOffsetX, config.tvzImageOffsetY, coordinate.a, coordinate.b, coordinate.c, coordinate.d);
+    return CGPointMake(point.x, point.y);
+}
+
+- (void)tvz_refreshImageControlsForRipples:(BOOL)ripples {
+    LNTouchConfig *config = ripples ? _touchRippleConfig : _touchContactConfig;
+    // Read the ivar to avoid creating an overlay merely because a preference changed.
+    for (UIView *candidate in _overlayWindow.subviews) {
+        if (![candidate isKindOfClass:LNTouchImageView.class]) continue;
+        LNTouchImageView *imageView = (LNTouchImageView *)candidate;
+        if (imageView.tvzIsRipple != ripples) continue;
+        imageView.tvzGIFPlaybackRate = config.tvzGIFPlaybackRate;
+        // Preserve an in-flight fade/morph; current fingers follow the new offset immediately.
+        if (imageView.tvzHasRawCenter && !imageView.isFadingOut && !ripples) {
+            imageView.center = [self tvz_displayCenter:imageView.tvzRawCenter config:config
+                                           coordinate:imageView.tvzInterfaceTransform];
+        }
+    }
 }
 
 - (void)traitCollectionDidChange:(UITraitCollection *)previousTraitCollection {
@@ -270,7 +300,7 @@ __attribute__((visibility("hidden")))
 
         CGAffineTransform newTransform;
         if (self.touchContactConfig.shouldAutoRotate && touchView != nil) {
-            CGPoint previousCenter = touchView.center;
+            CGPoint previousCenter = touchView.tvzHasRawCenter ? touchView.tvzRawCenter : newCenter;
             CGFloat distance = sqrt(pow(newCenter.x - previousCenter.x, 2) + pow(newCenter.y - previousCenter.y, 2));
             if (distance > 1) {
                 // Use new angle to rotate
@@ -326,10 +356,16 @@ __attribute__((visibility("hidden")))
 
     if (self.trackingEnabled && touchView != nil) {
         LNTouchImageView *rippleView = [[LNTouchImageView alloc] initWithImage:self.rippleImage];
+        CGAffineTransform interfaceTransform = self.coordinateTransform;
+        rippleView.tvzIsRipple = YES;
+        rippleView.tvzRawCenter = newCenter;
+        rippleView.tvzHasRawCenter = YES;
+        rippleView.tvzInterfaceTransform = interfaceTransform;
+        rippleView.tvzGIFPlaybackRate = self.touchRippleConfig.tvzGIFPlaybackRate;
         [self.overlayWindow addSubview:rippleView];
 
         rippleView.alpha = self.touchRippleConfig.alpha;
-        rippleView.center = newCenter;
+        rippleView.center = [self tvz_displayCenter:newCenter config:self.touchRippleConfig coordinate:interfaceTransform];
         rippleView.transform = newTransform;
 
         CGFloat fadeDuration = self.touchRippleConfig.fadeDuration;
@@ -366,6 +402,7 @@ __attribute__((visibility("hidden")))
 
     if (touchView == nil && touch.phase != UITouchPhaseStationary) {
         touchView = [[LNTouchImageView alloc] initWithImage:self.touchImage];
+        touchView.tvzGIFPlaybackRate = self.touchContactConfig.tvzGIFPlaybackRate;
         touchView.transform = coordinateTransform;
         [self.overlayWindow addSubview:touchView];
 
@@ -384,7 +421,10 @@ __attribute__((visibility("hidden")))
 
     if (!touchView.isFadingOut) {
         touchView.alpha = self.touchContactConfig.alpha;
-        touchView.center = newCenter;
+        touchView.tvzRawCenter = newCenter;
+        touchView.tvzHasRawCenter = YES;
+        touchView.tvzInterfaceTransform = coordinateTransform;
+        touchView.center = [self tvz_displayCenter:newCenter config:self.touchContactConfig coordinate:coordinateTransform];
         touchView.tag = touch.hash;
         touchView.timestamp = touch.timestamp;
         touchView.shouldAutomaticallyRemoveAfterTimeout =

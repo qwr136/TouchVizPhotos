@@ -15,4 +15,10 @@ __attribute__((visibility("hidden")))
 @property(nonatomic) BOOL shouldAutomaticallyRemoveAfterTimeout;
 @property(nonatomic, getter=isFadingOut) BOOL fadingOut;
 
+@property(nonatomic) double tvzGIFPlaybackRate;
+@property(nonatomic) CGPoint tvzRawCenter;
+@property(nonatomic) BOOL tvzHasRawCenter;
+@property(nonatomic) CGAffineTransform tvzInterfaceTransform;
+@property(nonatomic) BOOL tvzIsRipple;
+
 @end

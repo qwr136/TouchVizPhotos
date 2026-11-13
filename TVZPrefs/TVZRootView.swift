@@ -89,6 +89,15 @@ struct TVZRootView: View {
     let maximumLiftScale: Double = 5.0
     let liftScaleStep: Double = 0.1
 
+    @AppStorage("tvzGIFPlaybackRate", store: TVZUserDefaults.standard)
+    var tvzGIFPlaybackRate: Double = 1.0
+
+    @AppStorage("tvzImageOffsetX", store: TVZUserDefaults.standard)
+    var tvzImageOffsetX: Double = 0.0
+
+    @AppStorage("tvzImageOffsetY", store: TVZUserDefaults.standard)
+    var tvzImageOffsetY: Double = 0.0
+
     @AppStorage("enableOverride", store: TVZUserDefaults.standard)
     var enableOverride: Bool = false
 
@@ -401,6 +410,18 @@ struct TVZRootView: View {
         }
     }
 
+    private var tvzGIFPlaybackRateSection: some View {
+        TVZTouchVizImageSliderSection(tvzControl: .tvzGIFPlaybackRate, tvzValue: $tvzGIFPlaybackRate)
+    }
+
+    private var tvzImageOffsetXSection: some View {
+        TVZTouchVizImageSliderSection(tvzControl: .tvzImageOffsetX, tvzValue: $tvzImageOffsetX)
+    }
+
+    private var tvzImageOffsetYSection: some View {
+        TVZTouchVizImageSliderSection(tvzControl: .tvzImageOffsetY, tvzValue: $tvzImageOffsetY)
+    }
+
     var effectsSection: some View {
         Section {
             Toggle(isOn: $useTrackingEffect) {
@@ -516,7 +537,10 @@ struct TVZRootView: View {
     }
 
     var imageEffectPreview: some View {
-        TVZTouchVizImagePreview(image: fillImage)
+        TVZTouchVizImagePreview(
+            image: fillImage,
+            playbackRate: TVZTouchVizImageControl.tvzGIFPlaybackRate.tvz_binding($tvzGIFPlaybackRate).wrappedValue
+        )
             .id(imageFillName)
             .frame(maxWidth: .infinity, alignment: .center)
     }
@@ -641,7 +665,12 @@ struct TVZRootView: View {
             cornerRadiusSection
             animationDurationSection
             liftScaleSection
-            effectsSection
+            Group {
+                tvzGIFPlaybackRateSection
+                tvzImageOffsetXSection
+                tvzImageOffsetYSection
+                effectsSection
+            }
 
             if useTrackingEffect {
                 trackingEffectSection

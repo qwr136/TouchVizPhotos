@@ -26,6 +26,10 @@ __attribute__((visibility("hidden")))
 @property(nonatomic, assign) BOOL shouldAutoRotate;
 @property(nonatomic, strong, nullable) UIImage *fillImage;
 
+@property(nonatomic, assign) double tvzGIFPlaybackRate;
+@property(nonatomic, assign) CGFloat tvzImageOffsetX;
+@property(nonatomic, assign) CGFloat tvzImageOffsetY;
+
 @property(nonatomic, strong, nullable) UIColor *strokeColor;
 @property(nonatomic, strong, nullable) UIColor *fillColor;
 

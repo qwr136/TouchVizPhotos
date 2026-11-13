@@ -8,6 +8,7 @@
 
 #import "TVZPrefs/NSBundle+TVZPrefs.h"
 #import "TVZPrefs/TVZUserDefaults.h"
+#import "LNTouchVisualizer/Private/TVZTouchVizImageControlConfig.h"
 #import "TouchViz-Swift.h"
 
 @protocol SBReachabilityObserver <NSObject>
@@ -259,6 +260,7 @@ static void ReloadPrefs(void) {
     _gTouchConfig.liftScale = liftScale;
     _gRippleConfig.liftScale = liftScale;
 
+    TVZTouchVizLoadImageControls([TVZUserDefaults standardUserDefaults], _gTouchConfig, _gRippleConfig);
     _gWindow.touchContactConfig = _gTouchConfig;
     _gWindow.touchRippleConfig = _gRippleConfig;
 

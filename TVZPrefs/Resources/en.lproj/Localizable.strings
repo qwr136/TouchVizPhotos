@@ -58,6 +58,14 @@
 /* No comment provided by engineer. */
 "Lift Scale" = "Lift Scale";
 
+/* GIF playback and touch image position controls. */
+"GIF Playback Speed" = "GIF Playback Speed";
+"Image Horizontal Offset" = "Image Horizontal Offset";
+"Image Vertical Offset" = "Image Vertical Offset";
+"Adjusts GIF playback and the custom image preview; still images are unchanged." = "Adjusts GIF playback and the custom image preview; still images are unchanged.";
+"Negative moves left; positive moves right. Applies to touch images and image trails; the preview stays centered." = "Negative moves left; positive moves right. Applies to touch images and image trails; the preview stays centered.";
+"Negative moves up; positive moves down. Applies to touch images and image trails; the preview stays centered." = "Negative moves up; positive moves down. Applies to touch images and image trails; the preview stays centered.";
+
 /* No comment provided by engineer. */
 "Morph Effect" = "Morph Effect";
 

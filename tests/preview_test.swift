@@ -85,6 +85,12 @@ final class TVZPreviewTestApp: UIResponder, UIApplicationDelegate {
             driver.visible = false; await settle()
             driver.visible = true; await settle(); checkPixel(0, "row reinsert \(i)")
         }
+        if failure == nil, let controlsFailure = TVZTouchVizRunImageControlTests() {
+            failure = "production image controls: " + controlsFailure
+        }
+        if failure == nil, let sliderFailure = TVZTouchVizRunSliderTests() {
+            failure = "production sliders: " + sliderFailure
+        }
         if failure == nil, let storageFailure = TVZTouchVizRunStorageTests() {
             failure = "production storage: " + storageFailure
         }

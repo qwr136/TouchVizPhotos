@@ -58,6 +58,14 @@
 /* No comment provided by engineer. */
 "Lift Scale" = "抬起缩放";
 
+/* GIF playback and touch image position controls. */
+"GIF Playback Speed" = "GIF播放速度";
+"Image Horizontal Offset" = "图片左右偏移";
+"Image Vertical Offset" = "图片上下偏移";
+"Adjusts GIF playback and the custom image preview; still images are unchanged." = "调节 GIF 与自定义图片预览的播放速度；静图不受影响。";
+"Negative moves left; positive moves right. Applies to touch images and image trails; the preview stays centered." = "负值向左，正值向右。仅影响触摸图片与图片残影，预览保持居中。";
+"Negative moves up; positive moves down. Applies to touch images and image trails; the preview stays centered." = "负值向上，正值向下。仅影响触摸图片与图片残影，预览保持居中。";
+
 /* No comment provided by engineer. */
 "Morph Effect" = "变形效果";
 
