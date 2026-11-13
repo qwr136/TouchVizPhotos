@@ -37,7 +37,7 @@ ifeq ($(THEOS_DEVICE_SIMULATOR),1)
 CCTouchViz_LDFLAGS += -FFrameworks/_Simulator
 endif
 
-CCTouchViz_LDFLAGS += -F$(THEOS)/sdks/iPhoneOS18.5.sdk/System/Library/PrivateFrameworks
+CCTouchViz_LDFLAGS += -FCCTouchViz/Frameworks
 CCTouchViz_FRAMEWORKS += UIKit ImageIO
 CCTouchViz_PRIVATE_FRAMEWORKS += ControlCenterUIKit
 CCTouchViz_INSTALL_PATH += /Library/ControlCenter/Bundles

@@ -81,6 +81,13 @@ class TVZPhotoSourceContracts(unittest.TestCase):
         self.assertIn('Link Xcode iOS SDK 18.5',ci)
         self.assertIn('xcode-version: \'16.4\'',ci)
 
+    def test_control_center_device_stub_is_used(self):
+        stub = ROOT/'CCTouchViz/Frameworks/ControlCenterUIKit.framework/ControlCenterUIKit.tbd'
+        self.assertTrue(stub.exists())
+        self.assertIn('platform:              ios', stub.read_text())
+        make=(ROOT/'CCTouchViz/Makefile').read_text()
+        self.assertIn('-FCCTouchViz/Frameworks',make)
+
     def test_ci_gates_build_and_real_decoder_before_release(self):
         ci=(ROOT/'.github/workflows/build.yml').read_text()
         self.assertIn('needs: test',ci)
