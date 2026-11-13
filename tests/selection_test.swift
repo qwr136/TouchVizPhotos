@@ -7,8 +7,13 @@ struct TVZTouchVizSelectionTests {
         let images = ["default.png": 0, "emoji-a.png": 1, "photo-a.png": 2,
                       "animated.gif": 3, "emoji-a-again.png": 4, "photo-b.png": 5]
         var writes: [(String, String)] = []
+        var allowCommit = true
         let model = TVZTouchVizSelection<Int>(name: "default.png", emoji: "", load: { images[$0] },
-            persist: { writes.append(($0, $1)) })
+            persist: { name, emoji in
+                guard allowCommit else { return false }
+                writes.append((name, emoji))
+                return true
+            })
         var observed: [(String, String, Int?)] = []
         let subscription = model.$current.sink { observed.append(($0.name, $0.emoji, $0.image)) }
         func check(_ name: String, _ emoji: String, _ value: Int) {
@@ -29,9 +34,13 @@ struct TVZTouchVizSelectionTests {
         precondition(!model.select("damaged.gif")); check("animated.gif", "", 3)
         precondition(!model.select("")); check("animated.gif", "", 3)
         precondition(oldWrites == writes.count && oldEvents == observed.count)
+        allowCommit = false
+        precondition(!model.select("photo-b.png")); check("animated.gif", "", 3)
+        precondition(oldWrites == writes.count && oldEvents == observed.count)
+        allowCommit = true
         // A recreated settings page restores the last file/image together.
         let reopened = TVZTouchVizSelection<Int>(name: model.current.name, emoji: model.current.emoji,
-                                               load: { images[$0] }, persist: { _,_ in })
+                                               load: { images[$0] }, persist: { _,_ in true })
         precondition(reopened.current.name == "animated.gif" && reopened.current.image == 3)
         model.restore("default.png", emoji: ""); check("default.png", "", 0)
         precondition(writes.last?.0 == "animated.gif") // Restore does not rewrite defaults.

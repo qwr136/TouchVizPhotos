@@ -21,8 +21,17 @@ mkdir -p "$APP"
 export TVZ_TEST_APP="$APP"
 python3 -c 'import os,plistlib; plistlib.dump({"CFBundleIdentifier":"com.82flex.touchviz.previewtests","CFBundleExecutable":"TVZPreviewTests","CFBundleName":"TVZPreviewTests","CFBundlePackageType":"APPL","CFBundleVersion":"1","CFBundleShortVersionString":"1","LSRequiresIPhoneOS":True,"UIDeviceFamily":[1],"UILaunchScreen":{},"UISupportedInterfaceOrientations":["UIInterfaceOrientationPortrait"]},open(os.environ["TVZ_TEST_APP"]+"/Info.plist","wb"))'
 SDK=$(xcrun --sdk iphonesimulator --show-sdk-path)
-xcrun swiftc -swift-version 5 -target "$(uname -m)-apple-ios18.5-simulator" -sdk "$SDK" \
+TARGET="$(uname -m)-apple-ios18.5-simulator"
+for SOURCE in TVZPrefs/NSBundle+TVZPrefs.mm TVZPrefs/TVZTouchVizImageLoader.mm TVZPrefs/TVZTouchVizImageFrames.mm TVZPrefs/TVZUserDefaults.mm tests/storage_test.mm; do
+    xcrun clang++ -std=c++17 -fobjc-arc -target "$TARGET" -isysroot "$SDK" \
+        -Itests/shims -ITVZPrefs -DDEBUG=0 '-DPACKAGE_VERSION="test"' \
+        -c "$SOURCE" -o "$TMP/$(basename "$SOURCE").o"
+done
+cp tests/fixtures/unequal.gif "$APP/unequal.gif"
+xcrun swiftc -swift-version 5 -target "$TARGET" -sdk "$SDK" \
+    -import-objc-header tests/storage_test.h -Xcc -Itests/shims \
     TVZPrefs/TVZTouchVizSelection.swift TVZPrefs/TVZTouchVizImagePreview.swift tests/preview_test.swift \
+    "$TMP"/*.o -lc++ -framework ImageIO -framework UIKit \
     -o "$APP/TVZPreviewTests"
 codesign --force --sign - "$APP"
 xcrun simctl install "$DEVICE" "$APP"

@@ -41,7 +41,7 @@ final class TVZPreviewTestApp: UIResponder, UIApplicationDelegate {
         let gif = UIImage.animatedImage(with: [blue, blue], duration: 0.2)!
         let images = ["emoji-a": red, "photo-b": green, "gif-c": gif, "emoji-a-again": red]
         let selection = TVZTouchVizSelection<UIImage>(name: "emoji-a", emoji: "😀",
-                                                     load: { images[$0] }, persist: { _,_ in })
+                                                     load: { images[$0] }, persist: { _,_ in true })
         let driver = TVZPreviewTestDriver()
         let host = UIHostingController(rootView: TVZPreviewTestRoot(selection: selection, driver: driver))
         let newWindow = UIWindow(frame: UIScreen.main.bounds)
@@ -85,7 +85,10 @@ final class TVZPreviewTestApp: UIResponder, UIApplicationDelegate {
             driver.visible = false; await settle()
             driver.visible = true; await settle(); checkPixel(0, "row reinsert \(i)")
         }
-        let message = failure.map { "FAIL " + $0 } ?? "PASS production SwiftUI preview pixels: Emoji to photo to GIF to same Emoji, first selection and 10 row reinserts"
+        if failure == nil, let storageFailure = TVZTouchVizRunStorageTests() {
+            failure = "production storage: " + storageFailure
+        }
+        let message = failure.map { "FAIL " + $0 } ?? "PASS production SwiftUI preview pixels and storage: first selection, 10 row reinserts, A to B to C keeps C, Emoji/GIF, legacy cleanup, failed import and original source protection"
         let url = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent("preview-result.txt")
         try? message.write(to: url, atomically: true, encoding: .utf8)
         print(message)

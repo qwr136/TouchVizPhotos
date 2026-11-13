@@ -91,8 +91,11 @@ class TVZPhotoSourceContracts(unittest.TestCase):
         self.assertNotIn('.onChange(of: selectedEmoji)',view)
         self.assertNotIn('@State private var sourceImage',source('TVZPrefs/TVZTouchVizImagePreview.swift'))
         persist=view[view.index('persist: { name, emoji in'):view.index('func reload()')]
-        self.assertLess(persist.index('defaults.set(name'),persist.index('defaults.synchronize()'))
-        self.assertLess(persist.index('defaults.synchronize()'),persist.index('defaults.endUpdates()'))
+        self.assertIn('Bundle.tvz_commitFillImage(named: name, emoji: emoji)',persist)
+        bundle=source('TVZPrefs/NSBundle+TVZPrefs.mm')
+        commit=bundle[bundle.index('+ (BOOL)tvz_commitFillImageNamed:'):bundle.index('+ (BOOL)tvz_pruneFillImagesAfterSelectingName:')]
+        self.assertLess(commit.index('[defaults setObject:name'),commit.index('[defaults synchronize]'))
+        self.assertLess(commit.index('[defaults synchronize]'),commit.index('[defaults endUpdates]'))
         ci=(ROOT/'.github/workflows/build.yml').read_text()
         self.assertIn('sh tests/run_selection_tests.sh',ci)
         self.assertIn('sh tests/run_preview_tests.sh',ci)

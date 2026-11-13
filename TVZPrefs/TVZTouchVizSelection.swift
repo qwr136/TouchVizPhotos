@@ -10,10 +10,10 @@ struct TVZTouchVizSelectionSnapshot<Image> {
 final class TVZTouchVizSelection<Image>: ObservableObject {
     @Published private(set) var current: TVZTouchVizSelectionSnapshot<Image>
     private let load: (String) -> Image?
-    private let persist: (String, String) -> Void
+    private let persist: (String, String) -> Bool
 
     init(name: String, emoji: String, load: @escaping (String) -> Image?,
-         persist: @escaping (String, String) -> Void) {
+         persist: @escaping (String, String) -> Bool) {
         self.load = load
         self.persist = persist
         current = TVZTouchVizSelectionSnapshot(name: name, emoji: emoji, image: load(name))
@@ -22,7 +22,7 @@ final class TVZTouchVizSelection<Image>: ObservableObject {
     @discardableResult
     func select(_ name: String, emoji: String = "") -> Bool {
         guard !name.isEmpty, let image = load(name) else { return false }
-        persist(name, emoji)
+        guard persist(name, emoji) else { return false }
         current = TVZTouchVizSelectionSnapshot(name: name, emoji: emoji, image: image)
         return true
     }

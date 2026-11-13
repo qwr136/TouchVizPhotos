@@ -119,11 +119,7 @@ struct TVZRootView: View {
             emoji: defaults.string(forKey: "selectedEmoji") ?? "",
             load: { Bundle.tvz_fillImageNamed($0) },
             persist: { name, emoji in
-                defaults.beginUpdates()
-                defaults.set(emoji, forKey: "selectedEmoji")
-                defaults.set(name, forKey: "imageFillName")
-                _ = defaults.synchronize()
-                defaults.endUpdates()
+                Bundle.tvz_commitFillImage(named: name, emoji: emoji)
             }
         ))
     }
@@ -581,7 +577,17 @@ struct TVZRootView: View {
         let applied = withTransaction(transaction) {
             tvz_selection.select(name, emoji: emoji ?? "")
         }
+        // Success keeps the newly committed file; failure releases only its staged copy.
+        tvz_pruneUnusedImages(afterSelectingName: name)
         feedbackGenerator.notificationOccurred(applied ? .success : .error)
+    }
+
+    private func tvz_pruneUnusedImages(afterSelectingName name: String? = nil) {
+        DispatchQueue.global(qos: .utility).async {
+            if !Bundle.tvz_pruneFillImages(afterSelectingName: name) {
+                NSLog("[Touch-Viz] Old material copies could not all be removed; current selection is unchanged.")
+            }
+        }
     }
 
     var resetSection: some View {
@@ -651,6 +657,7 @@ struct TVZRootView: View {
             }
 
             resetSection
+                .disabled(tvz_isImportingPhoto)
         }
         .tint(TVZ_COLOR)
         .transition(.opacity)
@@ -689,6 +696,9 @@ struct TVZRootView: View {
         .onAppear {
             reload()
             reloadOverrides()
+            if !tvz_isImportingPhoto {
+                tvz_pruneUnusedImages()
+            }
         }
         .onReceive(timer) { _ in
             withAnimation {
