@@ -99,8 +99,6 @@ struct TVZTouchVizImageSliderSection: View {
                     .font(.footnote.monospacedDigit())
                     .textCase(nil)
             }
-        } footer: {
-            Text(NSLocalizedString(tvzControl.tvzFooter, bundle: Bundle.tvz_support, comment: ""))
         }
     }
 }
