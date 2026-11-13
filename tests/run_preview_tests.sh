@@ -27,13 +27,16 @@ for SOURCE in TVZPrefs/NSBundle+TVZPrefs.mm TVZPrefs/TVZTouchVizImageLoader.mm T
         -Itests/shims -ITVZPrefs -DDEBUG=0 '-DPACKAGE_VERSION="test"' \
         -c "$SOURCE" -o "$TMP/$(basename "$SOURCE").o"
 done
-for SOURCE in LNTouchVisualizer/Private/LNTouchConfig.m LNTouchVisualizer/Private/LNTouchImageFactory.m LNTouchVisualizer/Private/LNTouchImageView.m LNTouchVisualizer/Private/LNTouchVisualizerWindow.m LNTouchVisualizer/Private/LNOverlayVisualizerWindow.m tests/image_controls_test.mm; do
-    xcrun clang++ -x objective-c++ -std=c++17 -fobjc-arc -target "$TARGET" -isysroot "$SDK" \
+for SOURCE in LNTouchVisualizer/Private/LNTouchConfig.m LNTouchVisualizer/Private/LNTouchImageFactory.m LNTouchVisualizer/Private/LNTouchImageView.m LNTouchVisualizer/Private/LNTouchVisualizerWindow.m LNTouchVisualizer/Private/LNOverlayVisualizerWindow.m; do
+    xcrun clang -std=gnu11 -fobjc-arc -target "$TARGET" -isysroot "$SDK" \
         -Itests/shims -I. -ILNTouchVisualizer/Private -ITVZPrefs \
-        -DLNPopupControllerEnforceStrictClean=1 -DFBSOrientationObserver=TVZControlTestOrientationObserver \
-        -Wno-deprecated-declarations \
+        -DLNPopupControllerEnforceStrictClean=1 -DFBSOrientationObserver=TVZControlTestOrientationObserver -Wno-deprecated-declarations \
         -c "$SOURCE" -o "$TMP/$(basename "$SOURCE").o"
 done
+xcrun clang++ -std=c++17 -fobjc-arc -target "$TARGET" -isysroot "$SDK" \
+    -Itests/shims -I. -ILNTouchVisualizer/Private -ITVZPrefs \
+    -DLNPopupControllerEnforceStrictClean=1 -DFBSOrientationObserver=TVZControlTestOrientationObserver -Wno-deprecated-declarations \
+    -c tests/image_controls_test.mm -o "$TMP/image_controls_test.mm.o"
 cp tests/fixtures/unequal.gif "$APP/unequal.gif"
 cp -R TVZPrefs/Resources "$APP/TVZPrefs.bundle"
 xcrun swiftc -swift-version 5 -target "$TARGET" -sdk "$SDK" \

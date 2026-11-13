@@ -74,6 +74,8 @@ class TVZImageControlTests(unittest.TestCase):
 
     def test_simulator_executes_real_touch_window_and_controls(self):
         runner=(ROOT/'tests/run_preview_tests.sh').read_text()
+        self.assertIn('xcrun clang -std=gnu11',runner)
+        self.assertNotIn('-x objective-c++',runner)
         for name in ('LNTouchVisualizer/Private/LNTouchVisualizerWindow.m',
                      'LNTouchVisualizer/Private/LNTouchImageView.m',
                      'TVZPrefs/TVZTouchVizImageControls.swift',
