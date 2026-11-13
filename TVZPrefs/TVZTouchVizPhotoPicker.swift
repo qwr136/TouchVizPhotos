@@ -65,7 +65,7 @@ struct TVZTouchVizPhotoPicker: UIViewControllerRepresentable {
 }
 
 /// SwiftUI Image(uiImage:) shows only a poster frame, so preview with UIImageView.
-private final class TVZTouchVizAnimatedPreviewView: UIView {
+final class TVZTouchVizAnimatedPreviewView: UIView {
     let imageView = UIImageView()
 
     override var intrinsicContentSize: CGSize {
