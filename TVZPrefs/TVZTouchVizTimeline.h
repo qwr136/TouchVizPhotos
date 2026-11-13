@@ -26,7 +26,13 @@ static inline bool TVZTouchVizPlanTimeline(const double *delays, size_t count,
         while (b) { unsigned int r = divisor % b; divisor = b; b = r; }
     }
     if (!divisor || total / divisor > 600) return false;
-    for (size_t i = 0; i < count; i++) repeats[i] = (uint16_t)(ticks[i] / divisor);
+    size_t expanded = 0;
+    for (size_t i = 0; i < count; i++) {
+        unsigned int repeat = ticks[i] / divisor;
+        if (repeat < 1 || repeat > 100 || expanded + repeat > 120) return false;
+        expanded += repeat;
+        repeats[i] = (uint16_t)repeat;
+    }
     *duration = total / 50.0;
     return true;
 }

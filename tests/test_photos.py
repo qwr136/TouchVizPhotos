@@ -76,6 +76,11 @@ class TVZPhotoSourceContracts(unittest.TestCase):
                      'TVZTouchVizMaxFrames','TVZTouchVizMaxDecodedBytes','kCGImageStatusComplete'):
             self.assertIn(code,decoder)
 
+    def test_swift_compiler_uses_matching_public_sdk(self):
+        ci=(ROOT/'.github/workflows/build.yml').read_text()
+        self.assertIn('Link Xcode iOS SDK 18.5',ci)
+        self.assertIn('xcode-version: \'16.4\'',ci)
+
     def test_ci_gates_build_and_real_decoder_before_release(self):
         ci=(ROOT/'.github/workflows/build.yml').read_text()
         self.assertIn('needs: test',ci)
@@ -83,7 +88,7 @@ class TVZPhotoSourceContracts(unittest.TestCase):
         self.assertLess(ci.index('tests/verify_deb.py'),ci.index('actions/upload-artifact'))
         for name in ('Makefile','TVZPrefs/Makefile','CCTouchViz/Makefile'):
             make=(ROOT/name).read_text()
-            self.assertIn('iphone:clang:16.5:15.0',make)
+            self.assertIn('iphone:clang:18.5:15.0',make)
             self.assertIn('ImageIO',make)
 
 class TVZExecutablePolicy(unittest.TestCase):

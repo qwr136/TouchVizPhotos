@@ -4,7 +4,7 @@ TARGET := simulator:clang:latest:15.0
 IPHONE_SIMULATOR_ROOT := $(shell ../devkit/sim-root.sh)
 else
 ARCHS := arm64 arm64e
-TARGET := iphone:clang:16.5:15.0
+TARGET := iphone:clang:18.5:15.0
 INSTALL_TARGET_PROCESSES := SpringBoard
 endif
 
@@ -37,6 +37,7 @@ ifeq ($(THEOS_DEVICE_SIMULATOR),1)
 CCTouchViz_LDFLAGS += -FFrameworks/_Simulator
 endif
 
+CCTouchViz_LDFLAGS += -F$(THEOS)/sdks/iPhoneOS16.5.sdk/System/Library/PrivateFrameworks
 CCTouchViz_FRAMEWORKS += UIKit ImageIO
 CCTouchViz_PRIVATE_FRAMEWORKS += ControlCenterUIKit
 CCTouchViz_INSTALL_PATH += /Library/ControlCenter/Bundles

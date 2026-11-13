@@ -57,10 +57,11 @@ jobs:
           ref: d4826f4e54127cfe1de88103b69b92107591c05b
           path: theos-roothide
           submodules: recursive
-      - name: Install iOS SDK 16.5
-        run: cd "$THEOS" && ./bin/install-sdk iPhoneOS16.5
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Link Xcode iOS SDK 18.5
+        run: |
+          SDK=$(xcrun --sdk iphoneos --show-sdk-path)
+          test "$(xcrun --sdk iphoneos --show-sdk-version)" = 18.5
+          ln -s "$SDK" "$THEOS/sdks/iPhoneOS18.5.sdk"
       - name: Compile and package
         run: sh build.sh roothide
       - name: Verify actual deb
