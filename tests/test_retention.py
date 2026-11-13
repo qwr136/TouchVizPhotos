@@ -20,7 +20,7 @@ class TVZRetentionFilesystemTests(unittest.TestCase):
             raise RuntimeError('C compiler required; file cleanup tests cannot be skipped')
         cls.build = tempfile.TemporaryDirectory()
         cls.binary = Path(cls.build.name)/'retention'
-        subprocess.run(['cc','-std=c11','-D_POSIX_C_SOURCE=200809L','-Wall','-Wextra','-Werror',
+        subprocess.run(['cc','-std=c11','-D_POSIX_C_SOURCE=200809L','-D_DARWIN_C_SOURCE','-Wall','-Wextra','-Werror',
                         str(ROOT/'tests/retention_driver.c'),'-o',str(cls.binary)],check=True)
 
     @classmethod
