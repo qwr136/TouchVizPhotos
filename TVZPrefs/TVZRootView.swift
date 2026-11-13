@@ -505,14 +505,9 @@ struct TVZRootView: View {
     }
 
     var imageEffectPreview: some View {
-        VStack(alignment: .center) {
-            if let fillImage {
-                TVZTouchVizImagePreview(image: fillImage)
-                    .frame(width: 60, height: 60)
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .center)
-        .animation(.easeIn, value: fillImage)
+        TVZTouchVizImagePreview(imageName: imageFillName)
+            .frame(maxWidth: .infinity, alignment: .center)
+            .animation(.easeIn, value: imageFillName)
     }
 
     var imageEffectSection: some View {

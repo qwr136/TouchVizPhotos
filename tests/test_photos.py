@@ -51,26 +51,24 @@ class TVZPhotoSourceContracts(unittest.TestCase):
 
     def test_preview_and_touch_consumer_are_animated(self):
         preview=source('TVZPrefs/TVZTouchVizPhotoPicker.swift')
-        for code in ('intrinsicContentSize: CGSize', 'CGSize(width: 60, height: 60)',
-                     'imageView.contentMode = .scaleAspectFit',
-                     'imageView.leadingAnchor.constraint(equalTo: leadingAnchor)',
-                     'imageView.trailingAnchor.constraint(equalTo: trailingAnchor)',
-                     'imageView.topAnchor.constraint(equalTo: topAnchor)',
-                     'imageView.bottomAnchor.constraint(equalTo: bottomAnchor)',
-                     'imageView.animationImages = frames','imageView.animationDuration = max(image.duration, 0.02)',
-                     'imageView.startAnimating()', 'static func dismantleUIView','view.stopPlayback()',
-                     'override func didMoveToWindow()', 'resumePlayback()',
-                     'guard window != nil, imageView.animationImages?.count ?? 0 > 1 else { return }'):
+        view=source('TVZPrefs/TVZRootView.swift')
+        self.assertIn('struct TVZTouchVizImagePreview: View',preview)
+        for code in ('let imageName: String',
+                     '@State private var sourceImage: UIImage',
+                     '_sourceImage = State(initialValue: Bundle.tvz_fillImageNamed(imageName))',
+                     'TimelineView(.animation(minimumInterval: 0.05',
+                     'Image(uiImage: frame(at: timeline.date))',
+                     '.frame(width: 60, height: 60)',
+                     '.onAppear(perform: tvz_reloadSelectedImage)',
+                     '.onChange(of: imageName)',
+                     'sourceImage = Bundle.tvz_fillImageNamed(imageName)'):
             self.assertIn(code,preview)
-        for code in ('private var tvz_image: UIImage?',
-                     'guard tvz_image !== image || imageView.image == nil else {',
-                     'tvz_image = image', 'override func didMoveToWindow()', 'resumePlayback()',
-                     'guard window != nil, imageView.animationImages?.count ?? 0 > 1 else { return }'):
-            self.assertIn(code,preview)
-        stop = preview[preview.index('func stopPlayback()'):preview.index('struct TVZTouchVizImagePreview')]
-        self.assertIn('imageView.stopAnimating()', stop)
-        self.assertNotIn('imageView.image = nil', stop)
-        self.assertNotIn('imageView.animationImages = nil', stop)
+        self.assertNotIn('UIViewRepresentable',preview)
+        self.assertNotIn('UIImageView',preview)
+        self.assertIn('TVZTouchVizImagePreview(imageName: imageFillName)',view)
+        preview_body=view[view.index('var imageEffectPreview: some View {'):view.index('var imageEffectSection: some View {')]
+        self.assertNotIn('if let fillImage',preview_body)
+        self.assertIn('self.window && self.image.images.count > 1',source('LNTouchVisualizer/Private/LNTouchImageView.m'))
         factory=source('LNTouchVisualizer/Private/LNTouchImageFactory.m')
         self.assertIn('for (UIImage *frame in fill.images)',factory)
         self.assertIn('fillImage:frame',factory)
